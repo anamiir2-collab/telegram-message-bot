@@ -1,4 +1,4 @@
-telegram-message-bot/
+telegram-message-bot
 ├── .github/
 │   └── workflows/
 │       └── send_message.yml   # يشغّل main.py كل ساعة تلقائيًا
