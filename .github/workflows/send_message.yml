@@ -2,8 +2,8 @@ name: Send Telegram Messages To All Users
 
 on:
   schedule:
-    - cron: '0 * * * *'  # كل ساعة بالضبط
-  workflow_dispatch:
+    - cron: '0 * * * *'  # تشغيل تلقائي كل ساعة
+  workflow_dispatch:     # زر التشغيل اليدوي
 
 jobs:
   send-messages:
@@ -20,9 +20,13 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install python-telegram-bot requests
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
       
       - name: Send messages to all users
-        run: python send_message.py
+        run: python main.py
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          CHANNEL_CHAT_ID: ${{ secrets.CHANNEL_CHAT_ID }}
+          USER_IDS: ${{ secrets.USER_IDS }}
