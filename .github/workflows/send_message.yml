@@ -3,7 +3,7 @@ name: Broadcast Message
 on:
   workflow_dispatch: # للتشغيل اليدوي
   schedule:
-    - cron: '0 8 * * *' # أو المواعيد التي تحددها
+    - cron: '0 8 * * *'
 
 jobs:
   run-broadcast:
