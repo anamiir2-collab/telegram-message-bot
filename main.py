@@ -17,35 +17,43 @@ async def send_broadcast():
     bot = Bot(token=TELEGRAM_TOKEN)
     
     # الاتصال بقاعدة بيانات MongoDB Atlas
-    client = MongoClient(MONGO_URI)
-    db = client["telegram_bot_db"]
-    users_collection = db["users"]
+    try:
+        client = MongoClient(MONGO_URI)
+        db = client["telegram_bot_db"]
+        users_collection = db["users"]
+    except Exception as e:
+        print(f"❌ خطأ في الاتصال بقاعدة البيانات MongoDB: {e}")
+        return
 
     # جلب جميع المستخدمين من الداتابيز
     users = list(users_collection.find({}, {"_id": 0, "chat_id": 1}))
     
     if not users:
-        print("⚠️ لم يتم العثور على أي مستخدمين داخل قاعدة البيانات!")
+        print("⚠️ لم يتم العثور على أي مستخدمين داخل قاعدة البيانات (القائمة فارغة)!")
         return
 
-    print(f"📡 جاري إرسال الرسالة إلى {len(users)} مستخدم...")
+    print(f"📡 تم العثور على {len(users)} مستخدم. جاري بدء الإرسال...")
 
     success_count = 0
     fail_count = 0
 
     # التكرار على كل مستخدم وإرسال الرسالة له
     for user in users:
-        chat_id = user.get("chat_id")
-        if chat_id:
+        raw_chat_id = user.get("chat_id")
+        if raw_chat_id:
             try:
+                # تحويل الـ chat_id لرقم صحيح للتأكد من توافقه مع تليجرام
+                chat_id = int(str(raw_chat_id).strip())
+                
                 await bot.send_message(chat_id=chat_id, text=MESSAGE_TEXT)
+                print(f"✅ تم الإرسال بنجاح إلى: {chat_id}")
                 success_count += 1
-                await asyncio.sleep(0.05)  # تفادي حظر تليجرام للرسائل السريعة
+                await asyncio.sleep(0.05)
             except Exception as e:
-                print(f"❌ فشل الإرسال إلى {chat_id}: {e}")
+                print(f"❌ فشل الإرسال إلى {raw_chat_id} | السبب: {e}")
                 fail_count += 1
 
-    print(f"✅ اكتملت الإذاعة!\nنجاح: {success_count} | فشل: {fail_count}")
+    print(f"\n📊 اكتملت الإذاعة!\nنجاح: {success_count} | فشل: {fail_count}")
 
 if __name__ == "__main__":
     asyncio.run(send_broadcast())
