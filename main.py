@@ -13,9 +13,6 @@ async def send_broadcast():
         print("❌ خطأ: لم يتم العثور على TELEGRAM_TOKEN أو MONGO_URI في Secrets!")
         return
 
-    # الاتصال ببوت التليجرام
-    bot = Bot(token=TELEGRAM_TOKEN)
-    
     # الاتصال بقاعدة بيانات MongoDB Atlas
     try:
         client = MongoClient(MONGO_URI)
@@ -29,31 +26,33 @@ async def send_broadcast():
     users = list(users_collection.find({}, {"_id": 0, "chat_id": 1}))
     
     if not users:
-        print("⚠️ لم يتم العثور على أي مستخدمين داخل قاعدة البيانات (القائمة فارغة)!")
+        print("⚠️ لم يتم العثور على أي مستخدمين داخل قاعدة البيانات!")
         return
 
-    print(f"📡 تم العثور على {len(users)} مستخدم. جاري بدء الإرسال...")
+    print(f"📡 تم العثور على {len(users)} مستخدم. جاري الاتصال بتليجرام...")
 
-    success_count = 0
-    fail_count = 0
+    # استخدام Context Manager لتهيئة البوت وإغلاقه بشكل صحيح تلقائياً
+    async with Bot(token=TELEGRAM_TOKEN) as bot:
+        success_count = 0
+        fail_count = 0
 
-    # التكرار على كل مستخدم وإرسال الرسالة له
-    for user in users:
-        raw_chat_id = user.get("chat_id")
-        if raw_chat_id:
-            try:
-                # تحويل الـ chat_id لرقم صحيح للتأكد من توافقه مع تليجرام
-                chat_id = int(str(raw_chat_id).strip())
-                
-                await bot.send_message(chat_id=chat_id, text=MESSAGE_TEXT)
-                print(f"✅ تم الإرسال بنجاح إلى: {chat_id}")
-                success_count += 1
-                await asyncio.sleep(0.05)
-            except Exception as e:
-                print(f"❌ فشل الإرسال إلى {raw_chat_id} | السبب: {e}")
-                fail_count += 1
+        for user in users:
+            raw_chat_id = user.get("chat_id")
+            if raw_chat_id:
+                try:
+                    # تحويل الـ chat_id لرقم صحيح
+                    chat_id = int(str(raw_chat_id).strip())
+                    
+                    # إرسال الرسالة
+                    await bot.send_message(chat_id=chat_id, text=MESSAGE_TEXT)
+                    print(f"✅ تم الإرسال بنجاح إلى: {chat_id}")
+                    success_count += 1
+                    await asyncio.sleep(0.05)
+                except Exception as e:
+                    print(f"❌ فشل الإرسال إلى {raw_chat_id} | السبب: {e}")
+                    fail_count += 1
 
-    print(f"\n📊 اكتملت الإذاعة!\nنجاح: {success_count} | فشل: {fail_count}")
+        print(f"\n📊 اكتملت الإذاعة!\nنجاح: {success_count} | فشل: {fail_count}")
 
 if __name__ == "__main__":
     asyncio.run(send_broadcast())
